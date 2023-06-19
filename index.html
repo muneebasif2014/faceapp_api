@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <form id="overlay-form">
+        <input type="file" id="image-input">
+        <input type="file" id="flag-input">
+        <input type="button" value="Apply Overlay" onclick="submitForm()">
+    </form>
+
+    <script>
+        function submitForm() {
+            // Get the selected files
+            var imageFile = document.getElementById('image-input').files[0];
+            var flagFile = document.getElementById('flag-input').files[0];
+
+            // Read the files and convert them to base64
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                var imageBase64 = event.target.result.split(',')[1];
+
+                var reader2 = new FileReader();
+                reader2.onload = function(event) {
+                    var flagBase64 = event.target.result.split(',')[1];
+
+                    // Send the base64-encoded image and flag data to the API
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "http://192.168.10.10:5000/overlay", true);
+                    xhr.setRequestHeader("Content-Type", "application/json");
+
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                var response = JSON.parse(xhr.responseText);
+                                var resultImageBase64 = response.result_image;
+
+                                // Display the resulting image
+                                var resultImageElement = document.createElement('img');
+                                resultImageElement.src = 'data:image/jpeg;base64,' + resultImageBase64;
+                                document.body.appendChild(resultImageElement);
+                            } else {
+                                console.log("Error:", xhr.status, xhr.statusText);
+                            }
+                        }
+                    };
+
+                    // Prepare the request data
+                    var requestData = JSON.stringify({
+                        image: imageBase64,
+                        flag: flagBase64
+                    });
+
+                    // Send the request
+                    xhr.send(requestData);
+                };
+                reader2.readAsDataURL(flagFile);
+            };
+            reader.readAsDataURL(imageFile);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+
+from flask import Flask, request , send_file
+import io
+import cv2
+import numpy as np
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return 'Hello, World!'
+
+@app.route('/api', methods=['POST'])
+def process_image():
+    # Retrieve the uploaded image file
+    image_file = request.files['image']
+
+    # Read the image file using OpenCV
+    image_data = image_file.read()
+    nparr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    # Apply the black and white effect to the image
+    processed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Convert the processed image to byte stream
+    _, encoded_image = cv2.imencode('.jpg', processed_image)
+    byte_stream = io.BytesIO(encoded_image.tobytes())
+
+    # Prepare the response with the processed image
+    return send_file(byte_stream, mimetype='image/jpeg')
+
+if __name__ == '__main__':
+    app.run(host='192.168.10.10', port=5000)
